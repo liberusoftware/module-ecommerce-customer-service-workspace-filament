@@ -1,0 +1,50 @@
+{
+    "name": "liberusoftware/ecommerce-customer-service-workspace-filament",
+    "description": "The support agent's desk: a Filament panel over the queue, the conversation, its transcript, the notes, the assembled timeline, the safe actions asked of other modules, and the service quality measured about all of it.",
+    "type": "liberu-module",
+    "license": "MIT",
+    "version": "0.1.0",
+    "keywords": ["laravel", "filament", "ecommerce", "customer-service", "support", "liberu"],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/liberusoftware/module-ecommerce-customer-service-workspace"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "filament/filament": "^5.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "liberusoftware/ecommerce-customer-service-workspace": "^0.1"
+    },
+    "require-dev": {
+        "liberusoftware/package-testbench": "^1.7",
+        "livewire/livewire": "^4.2",
+        "pestphp/pest": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Liberu\\Ecommerce\\CustomerServiceWorkspace\\Filament\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Liberu\\Ecommerce\\CustomerServiceWorkspace\\Filament\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "liberu": {
+            "name": "ecommerce-customer-service-workspace-filament"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,22 @@
+{
+    "name": "ecommerce-customer-service-workspace-filament",
+    "version": "0.1.0",
+    "description": "The support agent's desk: the queue, the conversation, its transcript, the notes, the assembled timeline, the safe actions asked of other modules, and the service quality measured about all of it.",
+    "category": "presentation",
+    "provider": "Liberu\\Ecommerce\\CustomerServiceWorkspace\\Filament\\CustomerServiceWorkspaceFilamentServiceProvider",
+    "requires": {
+        "packages": {
+            "liberusoftware/ecommerce-customer-service-workspace": "^0.1"
+        }
+    },
+    "presentation": {
+        "filament": {
+            "admin": [
+                "Liberu\\Ecommerce\\CustomerServiceWorkspace\\Filament\\CustomerServiceWorkspacePlugin"
+            ]
+        }
+    },
+    "features": [
+        "Placeholder"
+    ]
+}
