@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\Pages;
 
-use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\App;
@@ -97,9 +96,9 @@ final class ViewConversation extends ViewRecord
                 ])
                 ->visible(fn (Conversation $record): bool => PanelAgent::resolvable()
                     && $record->state === ConversationState::Assigned)
-                ->action(function (Conversation $record, array $data) {
+                ->action(function (Conversation $record, array $data): void {
                     /** @var array{body: string} $data */
-                    return Apply::to(
+                    Apply::to(
                         $record,
                         'Sent',
                         'The customer has your reply.',
@@ -153,23 +152,18 @@ final class ViewConversation extends ViewRecord
                 ->icon('heroicon-o-envelope-open')
                 ->color('gray')
                 ->visible(fn (): bool => PanelTenant::resolvable())
-                ->action(function (Conversation $record): void {
-                    $outcome = Apply::outcome(
-                        $record,
-                        fn (Conversation $fresh, string $tenant): Outcome => App::make(MarkMessagesRead::class)($tenant, $fresh, Author::Agent),
-                    );
-
-                    if ($outcome === null) {
-                        return;
-                    }
-
-                    Notification::make()
-                        ->title($outcome->count === 0 ? 'Nothing was unread' : 'Marked read')
-                        ->body($outcome->count.' '.Render::plural($outcome->count, 'line').' the customer wrote '
-                            .Render::plural($outcome->count, 'was', 'were').' unread until now.')
-                        ->color($outcome->count === 0 ? 'gray' : 'success')
-                        ->send();
-                }),
+                ->action(fn (Conversation $record) => Apply::then(
+                    $record,
+                    fn (Conversation $fresh, string $tenant): Outcome => App::make(MarkMessagesRead::class)($tenant, $fresh, Author::Agent),
+                    function (Outcome $outcome): void {
+                        Notification::make()
+                            ->title($outcome->count === 0 ? 'Nothing was unread' : 'Marked read')
+                            ->body($outcome->count.' '.Render::plural($outcome->count, 'line').' the customer wrote '
+                                .Render::plural($outcome->count, 'was', 'were').' unread until now.')
+                            ->color($outcome->count === 0 ? 'gray' : 'success')
+                            ->send();
+                    },
+                )),
 
             Action::make('note')
                 ->label('Write a note')
@@ -191,11 +185,11 @@ final class ViewConversation extends ViewRecord
                         ->maxLength(65535),
                 ])
                 ->visible(fn (): bool => PanelAgent::resolvable())
-                ->action(function (Conversation $record, array $data) {
+                ->action(function (Conversation $record, array $data): void {
                     /** @var array{visibility: string, body: string} $data */
                     $visibility = NoteVisibility::from($data['visibility']);
 
-                    return Apply::to(
+                    Apply::to(
                         $record,
                         'Written',
                         $visibility === NoteVisibility::CustomerVisible
@@ -235,7 +229,7 @@ final class ViewConversation extends ViewRecord
                 ->visible(fn (): bool => PanelAgent::resolvable())
                 ->action(function (Conversation $record, array $data): void {
                     /** @var array{kind: string, target_ref: string} $data */
-                    $outcome = Apply::outcome(
+                    Apply::then(
                         $record,
                         // Minted here, per submission. The domain publishes no
                         // minter and a caller-held reference is what stops a
@@ -248,18 +242,15 @@ final class ViewConversation extends ViewRecord
                             $data['target_ref'],
                             PanelAgent::current(),
                         ),
+                        function (Outcome $outcome): void {
+                            Notification::make()
+                                ->title($outcome->happened() ? 'Confirmed' : 'Recorded, not confirmed')
+                                ->body(Render::actionRequest($outcome))
+                                ->color(Render::outcomeColour($outcome))
+                                ->persistent()
+                                ->send();
+                        },
                     );
-
-                    if ($outcome === null) {
-                        return;
-                    }
-
-                    Notification::make()
-                        ->title($outcome->happened() ? 'Confirmed' : 'Recorded, not confirmed')
-                        ->body(Render::actionRequest($outcome))
-                        ->color(Render::outcomeColour($outcome))
-                        ->persistent()
-                        ->send();
                 }),
         ];
     }
@@ -272,5 +263,4 @@ final class ViewConversation extends ViewRecord
             NoteVisibility::CustomerVisible->value => Render::visibilityLabel(NoteVisibility::CustomerVisible),
         ];
     }
-
 }

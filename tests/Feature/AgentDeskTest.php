@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Filament\Actions\Testing\TestAction;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\AbandonConversation;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\RecordRating;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\ConversationState;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Pages\AgentDesk;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelAgent;
@@ -125,7 +126,7 @@ it('reports a mean the domain could take', function (): void {
 it('reports a rating the customer gave', function (): void {
     $conversation = resolved();
 
-    (new Liberu\Ecommerce\CustomerServiceWorkspace\Actions\RecordRating())(
+    (new RecordRating())(
         TestTenant::PRIMARY,
         $conversation,
         Claims::of($conversation->reference),

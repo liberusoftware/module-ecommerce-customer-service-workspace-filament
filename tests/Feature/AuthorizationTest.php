@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Auth\User;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Concerns\DeniesUnpublishedRelationAbilities;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Concerns\DeniesUnpublishedResourceAbilities;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Pages\AgentDesk;
@@ -15,6 +16,7 @@ use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelTenant;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Tests\TestTenant;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Widgets\ServiceQualityWidget;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Models\Conversation;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /*
  * The ability matrix, asserted by name.
@@ -89,7 +91,7 @@ it('refuses to view anything at all when the panel has no merchant', function ()
 it('answers a model that is not a conversation with no', function (): void {
     // `canView` takes Filament's `Model`. A resource that assumed its own model
     // would fatal rather than refuse.
-    expect(ConversationResource::canView(new Illuminate\Foundation\Auth\User()))->toBeFalse();
+    expect(ConversationResource::canView(new User()))->toBeFalse();
 });
 
 it('closes every relation-manager ability by name, including associate and dissociate', function (string $manager): void {
@@ -173,5 +175,5 @@ it('guards every page and widget it ships, and not by relying on a policy nobody
     PanelTenant::resolveUsing(fn (): ?string => null);
 
     expect(fn () => ConversationTimeline::authorizeResourceAccess())
-        ->toThrow(Symfony\Component\HttpKernel\Exception\HttpException::class);
+        ->toThrow(HttpException::class);
 });

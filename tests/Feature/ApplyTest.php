@@ -74,20 +74,29 @@ it('answers a conversation the domain will not find with the domain’s one refu
     $missing = new Conversation();
     $missing->reference = 'csw_nothingatall';
 
-    $outcome = Apply::outcome($missing, fn (): Outcome => Outcome::recorded(1));
+    $said = null;
+
+    Apply::then($missing, fn (): Outcome => Outcome::recorded(1), function () use (&$said): void {
+        $said = 'the caller was asked to say something';
+    });
+
+    expect($said)->toBeNull();
 
     $said = lastNotification();
 
-    expect($outcome)->toBeNull()
-        ->and($said['title'])->toBe('Nothing happened')
+    expect($said['title'])->toBe('Nothing happened')
         ->and($said['body'])->toBe('No such conversation.')
         ->and($said['color'])->toBe('danger');
 });
 
-it('returns the outcome for the actions whose answer is not three sentences', function (): void {
-    $outcome = Apply::outcome(assigned(), fn (): Outcome => Outcome::recorded(null, 3));
+it('hands the outcome to the caller for the actions whose answer is not three sentences', function (): void {
+    $counted = null;
 
-    expect($outcome?->count)->toBe(3)
-        // Nothing was said: the caller renders its own sentence about a count.
+    Apply::then(assigned(), fn (): Outcome => Outcome::recorded(null, 3), function (Outcome $outcome) use (&$counted): void {
+        $counted = $outcome->count;
+    });
+
+    expect($counted)->toBe(3)
+        // Nothing was said by `Apply`: the caller renders its own sentence.
         ->and(sentNotifications())->toBe([]);
 });

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Collection;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\PostMessage;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\RequestAction;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\WriteNote;
@@ -55,10 +57,10 @@ function twoMerchants(): array
     return ['ours' => $ours, 'theirs' => $theirs];
 }
 
-/** @return Illuminate\Support\Collection<int, Illuminate\Database\Eloquent\Model> */
-function relationRecords(string $manager, Conversation $owner): Illuminate\Support\Collection
+/** @return Collection<int, Model> */
+function relationRecords(string $manager, Conversation $owner): Collection
 {
-    /** @var Illuminate\Support\Collection<int, Illuminate\Database\Eloquent\Model> $records */
+    /** @var Collection<int, Model> $records */
     $records = Livewire::test($manager, [
         'ownerRecord' => $owner,
         'pageClass' => ViewConversation::class,

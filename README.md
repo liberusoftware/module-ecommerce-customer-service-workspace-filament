@@ -1,84 +1,66 @@
-# Ecommerce: Customer Service Workspace Filament
+# ecommerce-customer-service-workspace-filament
 
-> This optional Filament 5 presentation package presents exactly one independent domain module. It contributes reusable resources, pages, widgets, schemas, tables, infolists, and actions to application-owned panels while delegating authorization, validation, tenancy, persistence, and business rules to the ecommerce-customer-service-workspace public
+The support agent's desk. A Filament panel over
+[`liberusoftware/ecommerce-customer-service-workspace`](https://github.com/liberusoftware/module-ecommerce-customer-service-workspace):
+the customers waiting, the conversation an agent answers, its transcript, the notes, what other
+modules hold about the customer, what this workspace has asked those modules to do, and how the
+service is going.
 
-[Software](https://liberusoftware.com) ·
-[Hosting](https://liberuhosting.com) ·
-[Services](https://liberuservices.com) ·
-[Liberu Group](https://liberugroup.com)
+It is a one-to-one adapter. It contains no business rules: every decision is a published domain
+action, query or policy, and every figure is one the domain takes on read.
 
-![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white) ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white) ![Filament](https://img.shields.io/badge/Filament-5-FDAE4B)
-[![Latest release](https://img.shields.io/github/v/release/liberusoftware/module-ecommerce-customer-service-workspace-filament?sort=semver)](https://github.com/liberusoftware/module-ecommerce-customer-service-workspace-filament/releases/latest) [![Tests](https://github.com/liberusoftware/module-ecommerce-customer-service-workspace-filament/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/liberusoftware/module-ecommerce-customer-service-workspace-filament/actions/workflows/tests.yml)
+## The three faults it is shaped around
 
-## Features
+**A resource with no policy is a resource that allows everything.** The host's Admin panel cannot
+turn `strictAuthorization()` on, and its provider says why: `ChatConversation` and seven other
+resources have no policy, and Filament falls through to `allow()` for an ability nobody covered. So
+here, viewing is answered by the domain's `CustodyPolicy`, every other ability is forced closed by
+name, and each page and widget states its own guard. That is a test, not a convention.
 
-- Fully compatible with **Laravel 13**, **PHP 8.5**, and **Pest 5**.
-- Built following the domain-driven design guidelines of the Liberu architecture.
-- Reusable, presenting a clean public contract and boundaries.
-- Adheres to the strict database, security, and authorization standards of Liberu.
+**A hidden button is not authorization.** The host assigned an agent to a conversation in any state,
+so a closed one reopened and its resolution time was rewritten — and its panel dashboard did the
+same job inline against a *different* condition. Here a move the conversation cannot make is not
+offered, *and* every write re-reads the conversation through `FindConversation` and lets the domain
+decide, so asking anyway is refused rather than done.
 
-## Requirements
+**A panel that re-implements the service is a second service.** Nothing on these screens writes a
+query against the module's tables except the resource's own tenant restriction — one `where` in the
+package, and the suite fails if a second arrives.
 
-- **PHP 8.5**
-- **Composer 2**
-- A supported database (e.g. MySQL, PostgreSQL, SQLite)
+## What it publishes
 
-## Quick start
+| | |
+|---|---|
+| `CustomerServiceWorkspacePlugin` | The entry point. The host attaches it to the panels it means to. |
+| **Waiting** | The queue in arrival order, each place derived on read, with this merchant's service quality above it. Take the one who has waited longest. |
+| **Conversations** | Every conversation, its transcript, its notes, what has been asked of other modules, and its history. Take it, reply, resolve, give up on it, note it, ask. |
+| **What this customer has done** | The timeline, assembled from named seams at the moment of reading, with every source that could not be asked named and explained. |
 
-To install this package via Composer, run:
+## What it does not do
+
+- **No figure is ever a zero it did not measure.** A duration the domain could not take renders as
+  unmeasured, a conversation out of the queue as not queued, an unrated conversation as unrated. The
+  host's response time was written at assignment, its resolution time excluded the whole queue wait,
+  and a conversation abandoned in the queue recorded nothing at all.
+- **No rating.** A rating is bound to a resolved conversation and given once by the participant,
+  proved by a claim this desk does not have and cannot see.
+- **No erasure and no retention screen.** `ForgetParticipant` is a person-wide host path, and
+  `RedactResolvedBefore` is a scheduled policy the host configures — a merchant desk is the wrong
+  place for a button that destroys transcripts.
+- **No create, no edit, no delete, anywhere.** A conversation is opened by a customer, every change
+  to one is a guarded transition, and its messages, notes and events are append-only in the domain.
+- **No adapter.** No order module, no payment module, no refund. A safe action is recorded, handed
+  to whatever the host bound, and the answer recorded against it.
+
+## Installing
 
 ```bash
-composer require liberusoftware/module-ecommerce-customer-service-workspace-filament
+composer require liberusoftware/ecommerce-customer-service-workspace-filament
 ```
 
-## Documentation
+Nothing boots on install: the module manager registers the provider when the module is named in
+`MODULES_ENABLED`. Attaching the desk to a panel is one call — see [`docs/adoption.md`](docs/adoption.md).
 
-- [Liberu Main Documentation](https://github.com/liberusoftware/documentation)
-- [Architecture & Standards Index](https://github.com/liberusoftware/documentation/tree/main/architecture)
-
-## Related Liberu Projects
-
-| Project | Repository | Purpose |
-| --- | --- | --- |
-| **Boilerplate** | [liberusoftware/boilerplate-laravel](https://github.com/liberusoftware/boilerplate-laravel) | Shared Laravel application foundation and reference composition |
-| **CMS** | [liberu-cms/cms-laravel](https://github.com/liberu-cms/cms-laravel) | Structured content, publishing, media, multisite, and headless delivery |
-| **CRM** | [liberu-crm/crm-laravel](https://github.com/liberu-crm/crm-laravel) | Customer data, sales, marketing, service, and customer success |
-| **Billing** | [liberu-billing/billing-laravel](https://github.com/liberu-billing/billing-laravel) | Products, subscriptions, invoicing, payments, and provisioning |
-| **Accounting** | [liberu-accounting/accounting-laravel](https://github.com/liberu-accounting/accounting-laravel) | Ledgers, banking, tax, expenses, close, and financial reporting |
-| **Ecommerce** | [liberu-ecommerce/ecommerce-laravel](https://github.com/liberu-ecommerce/ecommerce-laravel) | Catalog, checkout, orders, fulfillment, returns, B2B, and omnichannel commerce |
-| **Control Panel** | [liberu-control-panel/control-panel-laravel](https://github.com/liberu-control-panel/control-panel-laravel) | Hosting, infrastructure, DNS, mail, databases, backups, and security operations |
-| **Automation** | [liberu-automation/automation-laravel](https://github.com/liberu-automation/automation-laravel) | Governed workflows, provider-neutral AI, approvals, and connectors |
-
-## Security
-
-Please do not report security vulnerabilities through public GitHub issues.
-Follow our [Security Policy](https://github.com/liberusoftware/documentation/blob/main/architecture/SECURITY.md) for private reporting and supported versions.
-
-## License
-
-This project is open-source software. You may use, modify, and distribute it
-under the terms described in [LICENSE.md](LICENSE.md).
-
-The linked license text is authoritative; this summary is not legal advice.
-
-## Feedback and contributing
-
-Feedback and contributions are welcome. You can help by reporting reproducible
-bugs, proposing focused enhancements, improving documentation or translations,
-and submitting tested code changes.
-
-Before contributing, please read [CONTRIBUTING.md](https://github.com/liberusoftware/documentation/blob/main/standards/CONTRIBUTING.md) and our
-[Code of Conduct](https://github.com/liberusoftware/documentation/blob/main/architecture/CODE_OF_CONDUCT.md). Search existing issues first, then use
-the appropriate issue template. Pull requests should explain the problem and
-approach, remain focused, include or update tests, pass the required workflows,
-and document user-visible or breaking changes.
-
-## Contributors
-
-Thank you to everyone who helps improve Liberu.
-
-<a href="https://github.com/liberusoftware/module-ecommerce-customer-service-workspace-filament/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=liberusoftware/module-ecommerce-customer-service-workspace-filament" alt="Contributors to liberusoftware/module-ecommerce-customer-service-workspace-filament">
-</a>
-
-[View the full contributors graph](https://github.com/liberusoftware/module-ecommerce-customer-service-workspace-filament/graphs/contributors).
+Why every screen is shaped the way it is, including the shapes that were rejected, is in
+[`docs/panel.md`](docs/panel.md). What breaks and what to do about it is in
+[`docs/runbook.md`](docs/runbook.md).

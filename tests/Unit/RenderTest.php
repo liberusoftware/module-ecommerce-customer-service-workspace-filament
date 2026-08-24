@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Carbon;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Data\Outcome;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Data\Timeline;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Data\TimelineEntry;
@@ -184,5 +185,5 @@ it('pluralises with the word somebody would write', function (): void {
 
 function entry(): TimelineEntry
 {
-    return new TimelineEntry('notes', 'internal', Illuminate\Support\Carbon::parse('2026-08-01 10:00:00'), '1');
+    return new TimelineEntry('notes', 'internal', Carbon::parse('2026-08-01 10:00:00'), '1');
 }

@@ -17,6 +17,23 @@
         }
     },
     "features": [
-        "Placeholder"
+        "The queue is the domain's queue: rows from ListQueue, a place from QueuePosition, and a place is never stored",
+        "A conversation not in the queue renders as not queued, never as first and never as a count of nought",
+        "Assignment happens in one place, through AssignAgent, whether it is taken from the queue screen or from the record",
+        "A move the conversation cannot make from where it stands is not offered, and asking for one anyway is refused rather than done",
+        "Every write re-reads the conversation through FindConversation, so the guard runs against the row and not against the screen",
+        "Every mutation reports which of three things happened: recorded, already recorded, or refused and why",
+        "All nine refusal reasons the domain publishes have a sentence, and a tenth would fail the suite rather than an operator",
+        "A request to another module says the row was written even when the transmission was refused, so nobody asks twice",
+        "Every service figure is a subtraction the domain takes, and a figure it could not take renders as unmeasured rather than as zero",
+        "The conversations still open are excluded from every mean and counted out loud, so a good average is never a small sample",
+        "A conversation nobody ever reached is counted, because those are the ones a service metric most needs to see",
+        "The timeline is assembled at the moment of reading and names every source that could not be asked, with the reason for each",
+        "A source nobody bound is told apart from one that could not answer, because the two need different next steps",
+        "Nobody is asked about a participant who has been erased, because a redacted reference is the wrong person",
+        "The customer's email is on the record screen and on no listing, and the participant's claim is on neither",
+        "Viewing is answered by the domain's CustodyPolicy, and every other Filament ability is forced closed by name",
+        "Every page and widget states its own guard, because a screen with no policy is a screen where everything is allowed",
+        "One where clause in the whole package, and the suite fails if a second arrives"
     ]
 }

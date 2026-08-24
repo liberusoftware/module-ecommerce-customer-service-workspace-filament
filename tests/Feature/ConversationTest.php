@@ -6,14 +6,16 @@ use Filament\Actions\Testing\TestAction;
 use Illuminate\Support\Facades\Config;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\AbandonConversation;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\AssignAgent;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\ForgetParticipant;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\PostMessage;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\ResolveConversation;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\Author;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\ConversationState;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\NoteVisibility;
-use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\RefusalReason;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\ConversationResource;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\Pages\ListConversations;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\Pages\ViewConversation;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\RelationManagers\TranscriptRelationManager;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelAgent;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\Render;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Tests\Fakes\FakeActionGateway;
@@ -304,7 +306,7 @@ it('shows a customer’s email on the record screen and on no listing', function
 
     desk($conversation)->assertSee('casey@example.test');
 
-    Livewire::test(Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\Pages\ListConversations::class)
+    Livewire::test(ListConversations::class)
         ->assertSee('Casey')
         ->assertDontSee('casey@example.test');
 });
@@ -318,10 +320,10 @@ it('never shows the participant’s claim, which is the customer’s proof and n
 it('leaves a redacted transcript readable as redacted rather than as silence', function (): void {
     $conversation = resolved();
 
-    (new Liberu\Ecommerce\CustomerServiceWorkspace\Actions\ForgetParticipant())(TestTenant::PRIMARY, 'customer-1');
+    (new ForgetParticipant())(TestTenant::PRIMARY, 'customer-1');
 
     $records = Livewire::test(
-        Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\RelationManagers\TranscriptRelationManager::class,
+        TranscriptRelationManager::class,
         ['ownerRecord' => $conversation->refresh(), 'pageClass' => ViewConversation::class],
     );
 

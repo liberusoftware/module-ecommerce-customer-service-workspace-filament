@@ -28,26 +28,28 @@ use Liberu\Ecommerce\CustomerServiceWorkspace\Queries\FindConversation;
 final class Apply
 {
     /**
+     * The common case: three sentences, one per thing that can have happened.
+     *
      * @param  Closure(Conversation, string): Outcome  $act  the domain action, given the conversation as it is now
      */
     public static function to(Conversation $conversation, string $done, string $did, string $already, Closure $act): void
     {
-        $outcome = self::outcome($conversation, $act);
-
-        if ($outcome !== null) {
-            self::report($outcome, $done, $did, $already);
-        }
+        self::then($conversation, $act, fn (Outcome $outcome) => self::report($outcome, $done, $did, $already));
     }
 
     /**
-     * The same re-read, for the two actions whose result is not three sentences.
+     * The same re-read, for the two actions whose answer is not three sentences:
+     * a count of lines marked read, and what another module said about a request
+     * that was written down before it was sent.
      *
-     * `null` means the domain would not find the conversation at all, and the
-     * refusal has already been rendered.
+     * `$say` is not reached when the domain will not find the conversation,
+     * because the refusal has already been rendered and a second sentence about
+     * it would be this panel narrating its own failure twice.
      *
      * @param  Closure(Conversation, string): Outcome  $act
+     * @param  Closure(Outcome): void  $say
      */
-    public static function outcome(Conversation $conversation, Closure $act): ?Outcome
+    public static function then(Conversation $conversation, Closure $act, Closure $say): void
     {
         $tenant = PanelTenant::current();
 
@@ -63,12 +65,12 @@ final class Apply
                 ->persistent()
                 ->send();
 
-            return null;
+            return;
         }
 
         ConversationResource::forgetMeasurements();
 
-        return $outcome;
+        $say($outcome);
     }
 
     public static function report(Outcome $outcome, string $done, string $did, string $already): void

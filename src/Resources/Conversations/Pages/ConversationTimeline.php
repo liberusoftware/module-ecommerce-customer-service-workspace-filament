@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\Pages;
 
 use BackedEnum;
-use Filament\Resources\Pages\Page;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Filament\Resources\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
