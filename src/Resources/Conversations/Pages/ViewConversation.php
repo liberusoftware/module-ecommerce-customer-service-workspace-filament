@@ -23,14 +23,13 @@ use Liberu\Ecommerce\CustomerServiceWorkspace\Data\Outcome;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\Author;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\ConversationState;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\NoteVisibility;
-use Liberu\Ecommerce\CustomerServiceWorkspace\Exceptions\CustomerServiceWorkspaceException;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\ConversationResource;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\Apply;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelAgent;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelTenant;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\Render;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Models\Conversation;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Models\Note;
-use Liberu\Ecommerce\CustomerServiceWorkspace\Queries\FindConversation;
 
 /**
  * One conversation and everything a desk may do to it.
@@ -75,7 +74,7 @@ final class ViewConversation extends ViewRecord
                 ->requiresConfirmation()
                 ->visible(fn (Conversation $record): bool => PanelAgent::resolvable()
                     && $record->state->canTransitionTo(ConversationState::Assigned))
-                ->action(fn (Conversation $record) => $this->write(
+                ->action(fn (Conversation $record) => Apply::to(
                     $record,
                     'Taken',
                     'It is yours. The customer is waiting on a reply, which is what the first-reply figure measures.',
@@ -100,7 +99,7 @@ final class ViewConversation extends ViewRecord
                     && $record->state === ConversationState::Assigned)
                 ->action(function (Conversation $record, array $data) {
                     /** @var array{body: string} $data */
-                    return $this->write(
+                    return Apply::to(
                         $record,
                         'Sent',
                         'The customer has your reply.',
@@ -124,7 +123,7 @@ final class ViewConversation extends ViewRecord
                 ->modalDescription('Closes it and stamps the resolution. The resolution time runs from arrival, not from assignment, so a customer who waited forty minutes and was answered in two is a forty-two minute resolution.')
                 ->modalSubmitActionLabel('Resolve')
                 ->visible(fn (Conversation $record): bool => $record->state->canTransitionTo(ConversationState::Resolved))
-                ->action(fn (Conversation $record) => $this->write(
+                ->action(fn (Conversation $record) => Apply::to(
                     $record,
                     'Resolved',
                     'Closed, and the customer may now rate it. Only the participant can, and only once.',
@@ -141,7 +140,7 @@ final class ViewConversation extends ViewRecord
                 ->modalDescription('For a conversation that queued and was never answered. It is measured, because the queue wait is the measurement — the host recorded nothing at all for exactly these, so the customers who got no service were the ones missing from the numbers.')
                 ->modalSubmitActionLabel('Give up on it')
                 ->visible(fn (Conversation $record): bool => $record->state->canTransitionTo(ConversationState::Abandoned))
-                ->action(fn (Conversation $record) => $this->write(
+                ->action(fn (Conversation $record) => Apply::to(
                     $record,
                     'Recorded as abandoned',
                     'The wait is measured and counted against this merchant\'s service, which is the point of recording it.',
@@ -155,17 +154,12 @@ final class ViewConversation extends ViewRecord
                 ->color('gray')
                 ->visible(fn (): bool => PanelTenant::resolvable())
                 ->action(function (Conversation $record): void {
-                    $tenant = PanelTenant::current();
+                    $outcome = Apply::outcome(
+                        $record,
+                        fn (Conversation $fresh, string $tenant): Outcome => App::make(MarkMessagesRead::class)($tenant, $fresh, Author::Agent),
+                    );
 
-                    try {
-                        $outcome = App::make(MarkMessagesRead::class)(
-                            $tenant,
-                            (new FindConversation())($tenant, $record->reference),
-                            Author::Agent,
-                        );
-                    } catch (CustomerServiceWorkspaceException $e) {
-                        $this->refuse($e);
-
+                    if ($outcome === null) {
                         return;
                     }
 
@@ -201,7 +195,7 @@ final class ViewConversation extends ViewRecord
                     /** @var array{visibility: string, body: string} $data */
                     $visibility = NoteVisibility::from($data['visibility']);
 
-                    return $this->write(
+                    return Apply::to(
                         $record,
                         'Written',
                         $visibility === NoteVisibility::CustomerVisible
@@ -241,24 +235,24 @@ final class ViewConversation extends ViewRecord
                 ->visible(fn (): bool => PanelAgent::resolvable())
                 ->action(function (Conversation $record, array $data): void {
                     /** @var array{kind: string, target_ref: string} $data */
-                    $tenant = PanelTenant::current();
-
-                    try {
-                        $outcome = App::make(RequestAction::class)(
+                    $outcome = Apply::outcome(
+                        $record,
+                        // Minted here, per submission. The domain publishes no
+                        // minter and a caller-held reference is what stops a
+                        // retry authorising a second refund.
+                        fn (Conversation $fresh, string $tenant): Outcome => App::make(RequestAction::class)(
                             $tenant,
-                            (new FindConversation())($tenant, $record->reference),
+                            $fresh,
                             bin2hex(random_bytes(16)),
                             $data['kind'],
                             $data['target_ref'],
                             PanelAgent::current(),
-                        );
-                    } catch (CustomerServiceWorkspaceException $e) {
-                        $this->refuse($e);
+                        ),
+                    );
 
+                    if ($outcome === null) {
                         return;
                     }
-
-                    $record->refresh();
 
                     Notification::make()
                         ->title($outcome->happened() ? 'Confirmed' : 'Recorded, not confirmed')
@@ -279,46 +273,4 @@ final class ViewConversation extends ViewRecord
         ];
     }
 
-    /**
-     * Re-read, act, and say which of the three things happened.
-     *
-     * @param  Closure(Conversation, string): Outcome  $act
-     */
-    private function write(Conversation $record, string $done, string $did, string $already, Closure $act): void
-    {
-        $tenant = PanelTenant::current();
-
-        try {
-            $outcome = $act((new FindConversation())($tenant, $record->reference), $tenant);
-        } catch (CustomerServiceWorkspaceException $e) {
-            $this->refuse($e);
-
-            return;
-        }
-
-        $record->refresh();
-        ConversationResource::forgetMeasurements();
-
-        Notification::make()
-            ->title(match (true) {
-                $outcome->happened() => $done,
-                $outcome->wasRefused() => 'Refused',
-                default => 'Nothing changed',
-            })
-            ->body(Render::outcome($outcome, $did, $already))
-            ->color(Render::outcomeColour($outcome))
-            ->persistent()
-            ->send();
-    }
-
-    /** The domain's one refusal for a reference that is somebody else's and one that does not exist. */
-    private function refuse(CustomerServiceWorkspaceException $e): void
-    {
-        Notification::make()
-            ->title('Nothing happened')
-            ->body($e->getMessage())
-            ->color('danger')
-            ->persistent()
-            ->send();
-    }
 }

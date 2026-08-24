@@ -14,6 +14,7 @@ use Liberu\Ecommerce\CustomerServiceWorkspace\Enums\Author;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\ConversationResource;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelAgent;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelTenant;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Tests\Claims;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Tests\TestAgent;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Tests\TestCase;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Tests\TestTenant;
@@ -55,6 +56,8 @@ function conversation(
     ?string $email = 'casey@example.test',
 ): Conversation {
     $opened = (new OpenConversation())($tenantId, $channel, $participantRef, $name, $email);
+
+    Claims::remember($opened->reference, $opened->claim);
 
     return Conversation::query()->findOrFail($opened->id);
 }

@@ -15,8 +15,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\App;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Actions\AssignAgent;
-use Liberu\Ecommerce\CustomerServiceWorkspace\Exceptions\CustomerServiceWorkspaceException;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Data\Outcome;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\ConversationResource;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\Apply;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelAgent;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelTenant;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\Render;
@@ -141,7 +142,6 @@ final class AgentDesk extends Page implements HasTable
 
     private function takeNext(): null
     {
-        $tenant = PanelTenant::current();
         $next = $this->waiting()->first();
 
         if ($next === null) {
@@ -154,26 +154,13 @@ final class AgentDesk extends Page implements HasTable
             return null;
         }
 
-        try {
-            $outcome = App::make(AssignAgent::class)($tenant, $next, PanelAgent::current());
-        } catch (CustomerServiceWorkspaceException $e) {
-            Notification::make()->title('Nothing happened')->body($e->getMessage())->color('danger')->persistent()->send();
-
-            return null;
-        }
-
-        ConversationResource::forgetMeasurements();
-
-        Notification::make()
-            ->title($outcome->happened() ? 'Taken' : ($outcome->wasRefused() ? 'Refused' : 'Nothing changed'))
-            ->body(Render::outcome(
-                $outcome,
-                ($next->participant_name ?? 'The customer').' is yours. They arrived '.$next->queued_at->diffForHumans().'.',
-                'It was already yours.',
-            ))
-            ->color(Render::outcomeColour($outcome))
-            ->persistent()
-            ->send();
+        Apply::to(
+            $next,
+            'Taken',
+            ($next->participant_name ?? 'The customer').' is yours. They arrived '.$next->queued_at->diffForHumans().'.',
+            'It was already yours.',
+            fn (Conversation $fresh, string $tenant): Outcome => App::make(AssignAgent::class)($tenant, $fresh, PanelAgent::current()),
+        );
 
         return null;
     }
