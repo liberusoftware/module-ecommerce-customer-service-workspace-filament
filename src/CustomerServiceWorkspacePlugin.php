@@ -7,6 +7,9 @@ namespace Liberu\Ecommerce\CustomerServiceWorkspace\Filament;
 use Closure;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Pages\AgentDesk;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Resources\Conversations\ConversationResource;
+use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelAgent;
 use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelTenant;
 
 /**
@@ -14,7 +17,8 @@ use Liberu\Ecommerce\CustomerServiceWorkspace\Filament\Support\PanelTenant;
  *
  *     $panel->plugin(
  *         CustomerServiceWorkspacePlugin::make()
- *             ->tenantUsing(fn (): string => (string) Filament::getTenant()?->getKey()),
+ *             ->tenantUsing(fn (): string => (string) Filament::getTenant()?->getKey())
+ *             ->agentUsing(fn (): string => (string) Filament::auth()->id()),
  *     );
  */
 final class CustomerServiceWorkspacePlugin implements Plugin
@@ -37,9 +41,23 @@ final class CustomerServiceWorkspacePlugin implements Plugin
         return $this;
     }
 
+    /** Who the desk acts as. Without it, the panel's authenticated user is used. */
+    public function agentUsing(?Closure $resolver): self
+    {
+        PanelAgent::resolveUsing($resolver);
+
+        return $this;
+    }
+
     public function register(Panel $panel): void
     {
-        //
+        $panel->resources([
+            ConversationResource::class,
+        ]);
+
+        $panel->pages([
+            AgentDesk::class,
+        ]);
     }
 
     public function boot(Panel $panel): void
